@@ -42,6 +42,12 @@ if(BUILD_TESTING)
         target_compile_options(wireglass_tests PRIVATE -Wall -Wextra -Wpedantic)
     endif()
     add_test(NAME wireglass-tests COMMAND wireglass_tests)
+    add_test(NAME refuse-input-overwrite
+        COMMAND wireglass scan
+            "${CMAKE_CURRENT_SOURCE_DIR}/examples/demo.pcap"
+            --output "${CMAKE_CURRENT_SOURCE_DIR}/examples/demo.pcap"
+    )
+    set_tests_properties(refuse-input-overwrite PROPERTIES WILL_FAIL TRUE)
 endif()
 
 include(GNUInstallDirs)

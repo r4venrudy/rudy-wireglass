@@ -5,8 +5,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-
 #ifdef _WIN32
 #include <io.h>
 #define WG_FSEEK _fseeki64
@@ -61,7 +59,7 @@ int wg_analyze_file(const char *path, const wg_limits *limits, wg_report *r) {
     wg_limits defaults;
     FILE *f = NULL;
     uint8_t magic[4];
-    off_t size;
+    int64_t size;
     int ok = 0;
     if (!path || !r) return 0;
     memset(r, 0, sizeof(*r));

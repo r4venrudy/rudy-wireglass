@@ -45,6 +45,8 @@ The executable is build/wireglass on Unix-like systems and build/Release/wiregla
 
 Strict mode returns exit code 1 if a configured heuristic emitted a finding. Parse or output errors return 2; a completed scan without strict findings returns 0. Use --help for all options.
 
+Wireglass refuses to write a report when its input and output paths identify the same file after path normalization.
+
 ### Included synthetic capture
 
 examples/demo.pcap contains a small, synthetic DNS lookup and TLS ClientHello using documentation-only IP addresses. Try:

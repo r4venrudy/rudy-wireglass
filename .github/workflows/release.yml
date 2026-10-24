@@ -63,7 +63,7 @@ jobs:
           pattern: wireglass-*
           merge-multiple: true
       - name: Checksums
-        run: sha256sum artifacts/* > artifacts/SHA256SUMS
+        run: cd artifacts && sha256sum *.tar.gz *.zip > SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           name: Rudy Wireglass ${{ github.ref_name }}

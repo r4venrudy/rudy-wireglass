@@ -4,9 +4,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+
+static int same_file(const char *a, const char *b) {
+    if (strcmp(a, b) == 0) return 1;
+#ifdef _WIN32
+    {
+        struct _stat64 sa, sb;
+        char full_a[_MAX_PATH], full_b[_MAX_PATH];
+        if (_stat64(a, &sa) == 0 && _stat64(b, &sb) == 0 && sa.st_ino != 0 && sb.st_ino != 0)
+            return sa.st_dev == sb.st_dev && sa.st_ino == sb.st_ino;
+        if (!_fullpath(full_a, a, sizeof(full_a)) || !_fullpath(full_b, b, sizeof(full_b))) return 0;
+        return _stricmp(full_a, full_b) == 0;
+    }
+#else
+    {
+        struct stat sa, sb;
+        return stat(a, &sa) == 0 && stat(b, &sb) == 0 &&
+               sa.st_dev == sb.st_dev && sa.st_ino == sb.st_ino;
+    }
+#endif
+}
 
 static void usage(FILE *f) {
-    fputs("Rudy Wireglass — offline PCAP/PCAPNG forensics\n\n"
+    fputs("Rudy Wireglass - offline PCAP/PCAPNG forensics\n\n"
           "Usage: wireglass scan CAPTURE [options]\n\n"
           "Options:\n"
           "  --format text|json       Report format (default: text)\n"
@@ -62,6 +83,10 @@ int main(int argc, char **argv) {
     }
     if (strcmp(format, "text") != 0 && strcmp(format, "json") != 0) {
         fputs("--format must be text or json\n", stderr); return 2;
+    }
+    if (strcmp(output, "-") != 0 && same_file(capture, output)) {
+        fputs("wireglass: report path resolves to the input capture; refusing to overwrite evidence\n", stderr);
+        return 2;
     }
     if (!wg_analyze_file(capture, &limits, &report)) {
         fprintf(stderr, "wireglass: %s\n", report.error[0] ? report.error : "analysis failed");

@@ -156,8 +156,13 @@ static int dns_read_name(const uint8_t *msg, size_t length, size_t offset,
         }
         if (p + n > length || used + n + 2 >= outcap) return 0;
         if (used) out[used++] = '.';
-        memcpy(out + used, msg + p, n);
-        used += n;
+        {
+            uint8_t k;
+            for (k = 0; k < n; ++k) {
+                unsigned char c = msg[p + k];
+                out[used++] = (c >= 0x21 && c <= 0x7e && c != '.' && c != '\\') ? (char)c : '?';
+            }
+        }
         p += n;
         if (!jumped) original = p - offset;
     }
@@ -283,24 +288,26 @@ static int read_u24(const uint8_t *p) {
 
 static void parse_tls_client_hello(wg_flow *f, int d) {
     const uint8_t *b = f->stream[d];
-    size_t n = f->stream_len[d], p, end;
+    size_t n = f->stream_len[d], p, end, handshake_end;
     uint16_t record_len, ext_len;
     if (n < 9 || b[0] != 22 || b[1] != 3 || b[5] != 1) return;
     record_len = (uint16_t)((b[3] << 8) | b[4]);
     if (record_len > 16384 || n < (size_t)record_len + 5) return;
     if (read_u24(b + 6) + 4 > (int)record_len) return;
+    handshake_end = 9u + (size_t)read_u24(b + 6);
+    if (handshake_end > n || handshake_end > (size_t)record_len + 5u) return;
     p = 9 + 2 + 32;
-    if (p >= n) return;
+    if (p >= handshake_end) return;
     p += 1 + b[p];
-    if (p + 2 > n) return;
+    if (p + 2 > handshake_end) return;
     p += 2 + ((size_t)b[p] << 8) + b[p + 1];
-    if (p >= n) return;
+    if (p >= handshake_end) return;
     p += 1 + b[p];
-    if (p + 2 > n) return;
+    if (p + 2 > handshake_end) return;
     ext_len = (uint16_t)((b[p] << 8) | b[p + 1]);
     p += 2;
     end = p + ext_len;
-    if (end > (size_t)record_len + 5) return;
+    if (end > handshake_end) return;
     while (p + 4 <= end) {
         uint16_t type = (uint16_t)((b[p] << 8) | b[p + 1]);
         uint16_t length = (uint16_t)((b[p + 2] << 8) | b[p + 3]);
@@ -313,8 +320,12 @@ static void parse_tls_client_hello(wg_flow *f, int d) {
             if (q + 3 <= ext_end && b[q] == 0) {
                 name_len = (uint16_t)((b[q + 1] << 8) | b[q + 2]);
                 q += 3;
-                if (name_len > 0 && q + name_len <= ext_end && name_len < sizeof(f->tls_sni)) {
-                    memcpy(f->tls_sni, b + q, name_len);
+                if (name_len > 0 && (size_t)name_len + 3 <= list_len && q + name_len <= ext_end && name_len < sizeof(f->tls_sni)) {
+                    uint16_t k;
+                    for (k = 0; k < name_len; ++k) {
+                        unsigned char c = b[q + k];
+                        f->tls_sni[k] = (c >= 0x20 && c <= 0x7e) ? (char)c : '?';
+                    }
                     f->tls_sni[name_len] = '\0';
                 }
             }
@@ -325,8 +336,12 @@ static void parse_tls_client_hello(wg_flow *f, int d) {
             q += 2;
             if (q < ext_end) {
                 alpn_len = b[q++];
-                if (alpn_len > 0 && q + alpn_len <= ext_end && alpn_len < sizeof(f->tls_alpn)) {
-                    memcpy(f->tls_alpn, b + q, alpn_len);
+                if (alpn_len > 0 && alpn_len <= list_len && q + alpn_len <= ext_end && alpn_len < sizeof(f->tls_alpn)) {
+                    uint8_t k;
+                    for (k = 0; k < alpn_len; ++k) {
+                        unsigned char c = b[q + k];
+                        f->tls_alpn[k] = (c >= 0x20 && c <= 0x7e) ? (char)c : '?';
+                    }
                     f->tls_alpn[alpn_len] = '\0';
                 }
             }
@@ -538,6 +553,7 @@ void wg_process_packet(wg_context *ctx, uint32_t linktype, const uint8_t *data,
                        uint32_t caplen, uint32_t wirelen, double timestamp) {
     size_t off = 0;
     uint16_t ethertype = 0;
+    unsigned vlan_count = 0;
     wg_packet_info p;
     int rc;
     (void)wirelen;
@@ -553,10 +569,12 @@ void wg_process_packet(wg_context *ctx, uint32_t linktype, const uint8_t *data,
         if (caplen < 14) { ctx->report->packets_truncated++; return; }
         ethertype = (uint16_t)((data[12] << 8) | data[13]);
         off = 14;
-        while (is_vlan(ethertype) && off + 4 <= caplen) {
+        while (is_vlan(ethertype) && off + 4 <= caplen && vlan_count < 4) {
             ethertype = (uint16_t)((data[off + 2] << 8) | data[off + 3]);
             off += 4;
+            vlan_count++;
         }
+        if (is_vlan(ethertype)) { ctx->report->packets_unsupported++; return; }
     } else if (linktype == WG_DLT_LINUX_SLL) {
         if (caplen < 16) { ctx->report->packets_truncated++; return; }
         ethertype = (uint16_t)((data[14] << 8) | data[15]);

@@ -40,7 +40,7 @@ static int fail(wg_report *r, const char *message) {
 }
 
 int wg_parse_pcap(wg_context *ctx, FILE *f, const uint8_t first[4]) {
-    uint8_t global[20], record[16];
+    uint8_t global[20] = {0}, record[16] = {0};
     int little, nanos;
     uint32_t snaplen, linktype;
 
@@ -72,6 +72,8 @@ int wg_parse_pcap(wg_context *ctx, FILE *f, const uint8_t first[4]) {
         subsec = wg_u32(record + 4, little);
         caplen = wg_u32(record + 8, little);
         wirelen = wg_u32(record + 12, little);
+        if (subsec >= (nanos ? 1000000000u : 1000000u))
+            return fail(ctx->report, "pcap packet timestamp fraction is out of range");
         if (caplen > snaplen || caplen > WG_MAX_PACKET || caplen > wirelen)
             return fail(ctx->report, "pcap packet length exceeds its declared bounds");
         packet = (uint8_t *)malloc(caplen ? caplen : 1);
@@ -174,7 +176,7 @@ static int parse_block(wg_context *ctx, const uint8_t *b, uint32_t length,
 }
 
 int wg_parse_pcapng(wg_context *ctx, FILE *f, const uint8_t first[4]) {
-    uint8_t header[8], *block = NULL;
+    uint8_t header[8] = {0}, *block = NULL;
     int little = 1;
     uint8_t have_section = 0;
     int first_block = 1;
@@ -195,14 +197,14 @@ int wg_parse_pcapng(wg_context *ctx, FILE *f, const uint8_t first[4]) {
         }
 
         if (memcmp(header, "\x0a\x0d\x0d\x0a", 4) == 0) {
-            uint8_t bom[4];
+            uint8_t bom[4] = {0};
             if (!read_exact(f, bom, sizeof(bom))) return fail(ctx->report, "truncated pcapng byte-order marker");
             if (memcmp(bom, "\x4d\x3c\x2b\x1a", 4) == 0) little = 1;
             else if (memcmp(bom, "\x1a\x2b\x3c\x4d", 4) == 0) little = 0;
             else return fail(ctx->report, "pcapng section has an invalid byte-order marker");
             length = wg_u32(header + 4, little);
             if (length < 28 || length > WG_MAX_BLOCK) return fail(ctx->report, "pcapng section length is outside the safe limit");
-            block = (uint8_t *)malloc(length);
+            block = (uint8_t *)calloc(length, 1);
             if (!block) return fail(ctx->report, "out of memory while reading pcapng block");
             memcpy(block, header, 8);
             memcpy(block + 8, bom, 4);
@@ -211,7 +213,7 @@ int wg_parse_pcapng(wg_context *ctx, FILE *f, const uint8_t first[4]) {
             length = wg_u32(header + 4, little);
             if (length < 12 || length > WG_MAX_BLOCK || (length & 3u) != 0)
                 return fail(ctx->report, "pcapng block length is outside the safe limit");
-            block = (uint8_t *)malloc(length);
+            block = (uint8_t *)calloc(length, 1);
             if (!block) return fail(ctx->report, "out of memory while reading pcapng block");
             memcpy(block, header, 8);
             if (!read_exact(f, block + 8, length - 8u)) { free(block); return fail(ctx->report, "truncated pcapng block data"); }

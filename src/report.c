@@ -47,7 +47,7 @@ int wg_json_string(FILE *f, const char *s) {
             case '\r': if (fputs("\\r", f) == EOF) return 0; break;
             case '\t': if (fputs("\\t", f) == EOF) return 0; break;
             default:
-                if (c < 0x20) {
+                if (c < 0x20 || c >= 0x7f) {
                     if (fprintf(f, "\\u%04x", (unsigned)c) < 0) return 0;
                 } else if (fputc(c, f) == EOF) return 0;
         }
@@ -66,7 +66,9 @@ static FILE *open_output(const char *path, int *close_after) {
 
 int wg_write_json(const wg_report *r, const char *path) {
     int close_after, first, write_ok;
-    FILE *f = open_output(path, &close_after);
+    FILE *f;
+    if (!r || !path) return 0;
+    f = open_output(path, &close_after);
     uint32_t i;
     if (!f) return 0;
     fprintf(f, "{\n  \"schema\":\"rudy-wireglass/v1\",\n  \"version\":\"%s\",\n  \"capture\":{\"format\":", WG_VERSION);
@@ -126,10 +128,12 @@ int wg_write_json(const wg_report *r, const char *path) {
 
 int wg_write_text(const wg_report *r, const char *path) {
     int close_after, rc = 1;
-    FILE *f = open_output(path, &close_after);
+    FILE *f;
+    if (!r || !path) return 0;
+    f = open_output(path, &close_after);
     uint32_t i;
     if (!f) return 0;
-    fprintf(f, "Rudy Wireglass %s — offline capture review\n", WG_VERSION);
+    fprintf(f, "Rudy Wireglass %s - offline capture review\n", WG_VERSION);
     fprintf(f, "Capture: %s | packets: %llu seen, %llu decoded | IPv4: %llu | IPv6: %llu | TCP: %llu | UDP: %llu\n",
             r->capture_format, (unsigned long long)r->packets_seen,
             (unsigned long long)r->packets_decoded, (unsigned long long)r->ipv4_packets,
@@ -147,7 +151,7 @@ int wg_write_text(const wg_report *r, const char *path) {
         char a[96], b[96];
         if (!flow->used) continue;
         endpoint(flow, 0, a, sizeof(a)); endpoint(flow, 1, b, sizeof(b));
-        fprintf(f, "%s %s <-> %s | packets %llu/%llu | bytes %llu/%llu | %.3f–%.3f s",
+        fprintf(f, "%s %s <-> %s | packets %llu/%llu | bytes %llu/%llu | %.3f to %.3f s",
                 protocol_name(flow->protocol), a, b, (unsigned long long)flow->packets[0],
                 (unsigned long long)flow->packets[1], (unsigned long long)flow->bytes[0],
                 (unsigned long long)flow->bytes[1], flow->first_seen, flow->last_seen);
@@ -165,7 +169,7 @@ int wg_write_text(const wg_report *r, const char *path) {
         if (d->answers[0]) fprintf(f, " -> %s", d->answers);
         fputc('\n', f);
     }
-    fputs("\nINDICATORS — triage leads, not verdicts\n---------------------------------------\n", f);
+    fputs("\nINDICATORS - triage leads, not verdicts\n---------------------------------------\n", f);
     for (i = 0; i < r->finding_count; ++i) {
         const wg_finding *x = &r->findings[i];
         fprintf(f, "[%s] %s (%s): %s\n", severity_name(x->severity), x->title, x->rule_id, x->detail);

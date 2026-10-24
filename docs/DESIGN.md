@@ -6,7 +6,8 @@ Wireglass is a file-only pipeline: capture reader → link/network/transport dec
 
 - Capture files default to 2 GiB; individual classic-PCAP packets and PCAPNG blocks are capped at 16 MiB and 64 MiB respectively.
 - Analysis defaults to 2,000,000 packets and 8,192 flows. DNS events and findings are capped independently.
-- TCP metadata collection is limited to 16 KiB per direction per tracked flow and is enabled only for HTTP/TLS well-known ports.
+- TCP metadata collection is limited to 16 KiB per direction by default and is enabled only for HTTP/TLS well-known ports.
+- All lazily allocated TCP metadata buffers share a 64 MiB process-wide ceiling, in addition to their per-direction limit.
 - Flow lookup uses a bounded open-addressed table. Unsupported link types and non-initial IP fragments are counted instead of guessed.
 
 ## Interpretation
