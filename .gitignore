@@ -1,0 +1,14 @@
+/build/
+/out/
+*.exe
+*.obj
+*.o
+*.a
+*.lib
+*.pdb
+*.dSYM/
+*.user
+*.suo
+wireglass_test.*
+wireglass_test.json
+wireglass_bad.pcap

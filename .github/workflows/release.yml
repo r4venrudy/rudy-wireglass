@@ -1,0 +1,72 @@
+name: Preview release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Package ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x64
+            os: ubuntu-latest
+            executable: build/wireglass
+          - target: windows-x64
+            os: windows-latest
+            executable: build/Release/wireglass.exe
+          - target: macos
+            os: macos-latest
+            executable: build/wireglass
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --config Release --parallel
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Stage Unix package
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p "stage/wireglass-${{ matrix.target }}"
+          cp "${{ matrix.executable }}" "stage/wireglass-${{ matrix.target }}/wireglass"
+          cp README.md LICENSE "stage/wireglass-${{ matrix.target }}/"
+          tar -czf "wireglass-${{ matrix.target }}.tar.gz" -C stage "wireglass-${{ matrix.target }}"
+      - name: Stage Windows package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path stage/wireglass-${{ matrix.target }} | Out-Null
+          Copy-Item "${{ matrix.executable }}" stage/wireglass-${{ matrix.target }}/wireglass.exe
+          Copy-Item README.md,LICENSE stage/wireglass-${{ matrix.target }}/
+          Compress-Archive -Path stage/wireglass-${{ matrix.target }} -DestinationPath wireglass-${{ matrix.target }}.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wireglass-${{ matrix.target }}
+          path: wireglass-${{ matrix.target }}.*
+          if-no-files-found: error
+
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: wireglass-*
+          merge-multiple: true
+      - name: Checksums
+        run: sha256sum artifacts/* > artifacts/SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Rudy Wireglass ${{ github.ref_name }}
+          prerelease: true
+          generate_release_notes: true
+          files: artifacts/*

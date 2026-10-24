@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Rudy Wireglass — Offline Packet Forensics</title>
+  <desc id="desc">A dark navy network-forensics banner with an outlined packet path and teal trace.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#09111c"/><stop offset="1" stop-color="#101b28"/></linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#1b2b39" stroke-width="1"/></pattern>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1200" height="360" rx="22" fill="url(#bg)"/>
+  <rect x="1" y="1" width="1198" height="358" rx="21" fill="url(#grid)" opacity=".62"/>
+  <path d="M0 319H1200" stroke="#172b38"/>
+  <rect x="56" y="54" width="5" height="245" rx="2.5" fill="#2ee6b8"/>
+  <text x="86" y="91" fill="#52f0c0" font-family="Consolas,monospace" font-size="14" letter-spacing="4">RUDY SYSTEMS  /  NETWORK FORENSICS</text>
+  <text x="82" y="166" fill="#f2f7fb" font-family="Segoe UI,Arial,sans-serif" font-weight="700" font-size="54">Rudy Wireglass</text>
+  <text x="86" y="207" fill="#b4c7d8" font-family="Segoe UI,Arial,sans-serif" font-size="22">Offline packet reconstruction. Explainable incident leads.</text>
+  <path d="M760 103h112l26 26h104l28-28h112M760 171h83l30 30h64l34-36h153M760 243h130l35-30h80l22 26h97" fill="none" stroke="#264456" stroke-width="2"/>
+  <path d="M760 171h95l23-23h60l27 27h70l23-23h100" fill="none" stroke="#28e2b3" stroke-width="3" filter="url(#glow)"/>
+  <circle cx="760" cy="171" r="6" fill="#28e2b3"/><circle cx="855" cy="171" r="5" fill="#28e2b3"/><circle cx="938" cy="175" r="5" fill="#28e2b3"/><circle cx="1025" cy="175" r="5" fill="#28e2b3"/><circle cx="1092" cy="152" r="5" fill="#28e2b3"/>
+  <rect x="83" y="241" width="130" height="34" rx="7" fill="#102431" stroke="#245044"/><text x="102" y="263" fill="#42e9ba" font-family="Consolas,monospace" font-size="14">PCAP / PCAPNG</text>
+  <rect x="224" y="241" width="112" height="34" rx="7" fill="#102431" stroke="#245044"/><text x="248" y="263" fill="#42e9ba" font-family="Consolas,monospace" font-size="14">TCP / DNS</text>
+  <rect x="347" y="241" width="114" height="34" rx="7" fill="#102431" stroke="#245044"/><text x="372" y="263" fill="#42e9ba" font-family="Consolas,monospace" font-size="14">TLS / HTTP</text>
+  <text x="86" y="338" fill="#86a2b7" font-family="Consolas,monospace" font-size="13" letter-spacing="2">C11  /  BOUNDED  /  FILE-ONLY  /  MIT</text>
+  <text x="1080" y="338" fill="#86a2b7" font-family="Consolas,monospace" font-size="13">0.1.0 PREVIEW</text>
+</svg>
