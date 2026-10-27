@@ -5,15 +5,28 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
 
 static int same_file(const char *a, const char *b) {
     if (strcmp(a, b) == 0) return 1;
 #ifdef _WIN32
     {
-        struct _stat64 sa, sb;
+        HANDLE first = CreateFileA(a, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                  NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        HANDLE second = CreateFileA(b, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                   NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        BY_HANDLE_FILE_INFORMATION sa = {0}, sb = {0};
+        int have_ids = first != INVALID_HANDLE_VALUE && second != INVALID_HANDLE_VALUE &&
+                       GetFileInformationByHandle(first, &sa) && GetFileInformationByHandle(second, &sb);
+        int equal = have_ids && sa.dwVolumeSerialNumber == sb.dwVolumeSerialNumber &&
+                    sa.nFileIndexHigh == sb.nFileIndexHigh && sa.nFileIndexLow == sb.nFileIndexLow;
         char full_a[_MAX_PATH], full_b[_MAX_PATH];
-        if (_stat64(a, &sa) == 0 && _stat64(b, &sb) == 0 && sa.st_ino != 0 && sb.st_ino != 0)
-            return sa.st_dev == sb.st_dev && sa.st_ino == sb.st_ino;
+        if (first != INVALID_HANDLE_VALUE) CloseHandle(first);
+        if (second != INVALID_HANDLE_VALUE) CloseHandle(second);
+        if (have_ids) return equal;
         if (!_fullpath(full_a, a, sizeof(full_a)) || !_fullpath(full_b, b, sizeof(full_b))) return 0;
         return _stricmp(full_a, full_b) == 0;
     }

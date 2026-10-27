@@ -45,7 +45,9 @@ The executable is build/wireglass on Unix-like systems and build/Release/wiregla
 
 Strict mode returns exit code 1 if a configured heuristic emitted a finding. Parse or output errors return 2; a completed scan without strict findings returns 0. Use --help for all options.
 
-Wireglass refuses to write a report when its input and output paths identify the same file after path normalization.
+Wireglass refuses to write a report when its input and output paths identify the same file, including hard-link aliases. Windows checks the volume/file identity using file handles; POSIX checks device/inode identity.
+
+Building the regression tests requires Python 3 in addition to the C toolchain and CMake. Set `-DBUILD_TESTING=OFF` to build only the analyzer.
 
 ### Included synthetic capture
 

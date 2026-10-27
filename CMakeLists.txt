@@ -34,6 +34,7 @@ endif()
 
 include(CTest)
 if(BUILD_TESTING)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
     add_executable(wireglass_tests tests/test_wireglass.c)
     target_link_libraries(wireglass_tests PRIVATE wireglass_core)
     if(MSVC)
@@ -48,6 +49,8 @@ if(BUILD_TESTING)
             --output "${CMAKE_CURRENT_SOURCE_DIR}/examples/demo.pcap"
     )
     set_tests_properties(refuse-input-overwrite PROPERTIES WILL_FAIL TRUE)
+    add_test(NAME preserve-input-aliases
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cli.py" $<TARGET_FILE:wireglass>)
 endif()
 
 include(GNUInstallDirs)
