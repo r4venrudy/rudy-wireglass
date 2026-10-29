@@ -13,6 +13,7 @@ permissions:
 jobs:
   test:
     name: ${{ matrix.os }}
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -35,6 +36,7 @@ jobs:
 
   sanitizers:
     name: Address and undefined-behavior sanitizers
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
