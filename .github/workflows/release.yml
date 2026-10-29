@@ -25,7 +25,7 @@ jobs:
             os: macos-latest
             executable: build/wireglass
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
@@ -47,7 +47,7 @@ jobs:
           Copy-Item "${{ matrix.executable }}" stage/wireglass-${{ matrix.target }}/wireglass.exe
           Copy-Item README.md,LICENSE stage/wireglass-${{ matrix.target }}/
           Compress-Archive -Path stage/wireglass-${{ matrix.target }} -DestinationPath wireglass-${{ matrix.target }}.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: wireglass-${{ matrix.target }}
           path: wireglass-${{ matrix.target }}.*
@@ -57,14 +57,14 @@ jobs:
     needs: package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: artifacts
           pattern: wireglass-*
           merge-multiple: true
       - name: Checksums
         run: cd artifacts && sha256sum *.tar.gz *.zip > SHA256SUMS
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           name: Rudy Wireglass ${{ github.ref_name }}
           prerelease: true
